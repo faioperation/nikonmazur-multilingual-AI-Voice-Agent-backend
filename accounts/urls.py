@@ -11,12 +11,14 @@ from accounts.views import (
     CustomTokenRefreshView,
     UserListCreateView,
     UserDeleteView,
+    AdminResetUserPasswordView,
 )
 
 
 urlpatterns = [
     path("users/", UserListCreateView.as_view()),
     path("users/<int:user_id>/", UserDeleteView.as_view()),
+    path("users/<int:user_id>/reset-password/", AdminResetUserPasswordView.as_view()),
     path("me/", SelfProfileView.as_view(), name="self-profile"),
     path("login/", LoginView.as_view(), name="login"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),

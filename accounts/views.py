@@ -10,7 +10,11 @@ from accounts.models import User
 from api.permissions import IsAdminRole
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+import logging
+from django.utils.crypto import get_random_string
+from accounts.utils import send_admin_reset_email
 
+logger = logging.getLogger(__name__)
 
 class SelfProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -139,6 +143,7 @@ class LoginView(APIView):
                     "role": user.role,
                     "name": f"{user.name}",
                 },
+                "must_change_password": user.must_change_password,
             },
             status=status.HTTP_200_OK,
         )
@@ -247,3 +252,45 @@ class CustomTokenRefreshView(TokenRefreshView):
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+class AdminResetUserPasswordView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    @swagger_auto_schema(
+        operation_summary="Admin Reset User Password",
+        manual_parameters=[
+            openapi.Parameter(
+                "user_id",
+                openapi.IN_PATH,
+                description="ID of the user to reset password",
+                type=openapi.TYPE_INTEGER,
+            )
+        ],
+        responses={200: "Password reset successfully"},
+        tags=["Admin / Users"],
+    )
+    def post(self, request, user_id):
+        user = get_object_or_404(User, pk=user_id)
+        
+        temp_password = get_random_string(length=12)
+        user.set_password(temp_password)
+        user.must_change_password = True
+        user.save()
+        
+        # Log the action
+        logger.info(
+            f"Admin '{request.user.email}' (ID: {request.user.id}) reset password "
+            f"for user '{user.email}' (ID: {user.id})"
+        )
+        
+        send_admin_reset_email(
+            email=user.email,
+            temporary_password=temp_password,
+            name=user.name
+        )
+        
+        return Response(
+            {"message": f"Password reset for {user.email}. An email with the new temporary password has been sent."},
+            status=status.HTTP_200_OK,
+        )

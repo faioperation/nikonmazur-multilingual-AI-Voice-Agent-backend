@@ -9,7 +9,11 @@ from accounts.utils import (
     create_otp,
     verify_otp,
     send_otp_email,
+    send_welcome_email,
 )
+from django.utils.crypto import get_random_string
+from django.db import transaction
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 
 class UserManagementSerializer(serializers.ModelSerializer):
@@ -24,12 +28,8 @@ class UserManagementSerializer(serializers.ModelSerializer):
             "phone",
             "role",
             "last_active",
-            "password",
         ]
         read_only_fields = ["id", "last_active"]
-        extra_kwargs = {
-            "password": {"write_only": True},
-        }
 
     def get_last_active(self, obj):
         if not obj.last_login:
@@ -40,11 +40,20 @@ class UserManagementSerializer(serializers.ModelSerializer):
         return human_readable_time_ago(obj.last_login)
 
     def create(self, validated_data):
-        password = validated_data.pop("password", None)
+        temp_password = get_random_string(length=12)
+        validated_data['must_change_password'] = True
+        
         user = User.objects.create(**validated_data)
-        if password:
-            user.set_password(password)
-            user.save()
+        user.set_password(temp_password)
+        user.save()
+        
+        transaction.on_commit(lambda: send_welcome_email(
+            email=user.email,
+            temporary_password=temp_password,
+            name=user.name,
+            role=user.role
+        ))
+        
         return user
 
 
@@ -107,7 +116,14 @@ class ChangePasswordSerializer(serializers.Serializer):
     def save(self, **kwargs):
         user = self.context["request"].user
         user.set_password(self.validated_data["new_password"])
+        user.must_change_password = False
         user.save()
+        
+        # Invalidate all outstanding tokens for this user
+        tokens = OutstandingToken.objects.filter(user=user)
+        for token in tokens:
+            BlacklistedToken.objects.get_or_create(token=token)
+            
         return user
 
 

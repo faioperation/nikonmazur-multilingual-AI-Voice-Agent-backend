@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Password Reset - {{ AppName }}</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <h2 style="color: #2c3e50;">Password Reset for {{ AppName }}</h2>
+        <p>Hello {{ name }},</p>
+        <p>An administrator has reset your password for {{ AppName }}.</p>
+        
+        <h3 style="color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px;">New Login Details</h3>
+        <p><strong>Email:</strong> {{ email }}</p>
+        <p><strong>Temporary Password:</strong> <code style="background-color: #f4f4f4; padding: 2px 5px; border-radius: 3px;">{{ temporary_password }}</code></p>
+        
+        <p style="background-color: #fcf8e3; padding: 10px; border-left: 4px solid #faebcc;">
+            <strong>Note:</strong> For security reasons, you will be required to change your password immediately after you log in.
+        </p>
+        
+        <p>Please log in using your new credentials:</p>
+        <p>
+            <a href="{{ login_url }}" style="display: inline-block; padding: 10px 20px; background-color: #3498db; color: #fff; text-decoration: none; border-radius: 3px;">Login Here</a>
+        </p>
+        
+        <p>If you did not request this change, please contact your administrator immediately.</p>
+    </div>
+</body>
+</html>

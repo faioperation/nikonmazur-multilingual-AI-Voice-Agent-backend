@@ -85,3 +85,55 @@ def send_otp_email(email, otp, name):
     )
     email_msg.content_subtype = "html"
     email_msg.send()
+
+
+def send_welcome_email(email, temporary_password, name, role):
+    subject = "Welcome to Gloura Analytics"
+    
+    # We will use FRONTEND_URL or a default one for the login link
+    from django.conf import settings
+    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+    login_url = f"{frontend_url}/login"
+    
+    context = {
+        "AppName": "Gloura Analytics",
+        "email": email,
+        "temporary_password": temporary_password,
+        "name": name,
+        "role": role,
+        "login_url": login_url,
+    }
+    html_content = render_to_string("emails/welcome_email.html", context)
+
+    email_msg = EmailMessage(
+        subject=subject,
+        body=html_content,
+        to=[email],
+    )
+    email_msg.content_subtype = "html"
+    email_msg.send()
+
+
+def send_admin_reset_email(email, temporary_password, name):
+    subject = "Password Reset - Gloura Analytics"
+    
+    from django.conf import settings
+    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+    login_url = f"{frontend_url}/login"
+    
+    context = {
+        "AppName": "Gloura Analytics",
+        "email": email,
+        "temporary_password": temporary_password,
+        "name": name,
+        "login_url": login_url,
+    }
+    html_content = render_to_string("emails/admin_reset_email.html", context)
+
+    email_msg = EmailMessage(
+        subject=subject,
+        body=html_content,
+        to=[email],
+    )
+    email_msg.content_subtype = "html"
+    email_msg.send()
