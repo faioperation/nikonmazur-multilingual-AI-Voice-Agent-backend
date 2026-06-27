@@ -1,0 +1,10 @@
+.venv
+.env
+
+db.sqlite3
+
+Nikonmazur_Backend/__pycache__
+accounts/__pycache__
+api/__pycache__
+
+media
