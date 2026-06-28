@@ -2,17 +2,11 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import config
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-lb+)igb=53e@6+1a0c^%7tn#=d1#k+qni5%2ux*foy61l2a_^f"
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
@@ -35,6 +29,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "api",
     "accounts",
+    "call_recordings",
 ]
 
 MIDDLEWARE = [
@@ -175,3 +170,5 @@ EMAIL_PORT = config("EMAIL_PORT")
 EMAIL_USE_TLS = config("EMAIL_USE_TLS")
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+
+VAPI_API_KEY = config("VAPI_API_KEY", default="")

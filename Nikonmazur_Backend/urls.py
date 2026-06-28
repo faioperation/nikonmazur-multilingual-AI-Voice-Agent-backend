@@ -7,7 +7,6 @@ from django.conf import settings
 from .views import api_root_view
 from drf_yasg import openapi
 from rest_framework import permissions
-from .views import api_root_view
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -27,6 +26,7 @@ urlpatterns = [
     path("api-auth/", include("rest_framework.urls")),
     path("auth/", include("accounts.urls")),
     path("api/v1/", include("api.urls")),
+    # path("api/call-recordings/", include("call_recordings.urls")),
     path(
         "swagger/",
         schema_view.with_ui("swagger", cache_timeout=0),
