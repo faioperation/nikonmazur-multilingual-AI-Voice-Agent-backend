@@ -10,17 +10,19 @@ from accounts.views import (
     ResendOtpView,
     CustomTokenRefreshView,
     UserListCreateView,
-    UserDeleteView,
+    UserDetailView,
     AdminResetUserPasswordView,
+    LogoutView,
 )
 
 
 urlpatterns = [
     path("users/", UserListCreateView.as_view()),
-    path("users/<int:user_id>/", UserDeleteView.as_view()),
+    path("users/<int:user_id>/", UserDetailView.as_view()),
     path("users/<int:user_id>/reset-password/", AdminResetUserPasswordView.as_view()),
     path("me/", SelfProfileView.as_view(), name="self-profile"),
     path("login/", LoginView.as_view(), name="login"),
+    path("logout/", LogoutView.as_view(), name="logout"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("forgot-password/", ForgotPasswordView.as_view(), name="forgot-password"),
     path("verify-otp/", VerifyOtpView.as_view(), name="verify-otp"),

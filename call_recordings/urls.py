@@ -3,7 +3,7 @@ from .views import VapiWebhookView, CallRecordingListView, CallRecordingDetailVi
 
 urlpatterns = [
     path(
-        "call-recordings", CallRecordingListView.as_view(), name="call-recording-list"
+        "call-recordings/", CallRecordingListView.as_view(), name="call-recording-list"
     ),
     path(
         "call-recordings/<int:pk>/",

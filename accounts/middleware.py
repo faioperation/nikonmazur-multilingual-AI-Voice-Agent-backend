@@ -14,8 +14,7 @@ class ActiveUserMiddleware:
         response = self.get_response(request)
 
         if request.user.is_authenticated:
-            # update last_activity (could be last_login or separate field)
-            request.user.last_login = timezone.now()  # or custom last_activity
+            request.user.last_login = timezone.now()
             request.user.save(update_fields=["last_login"])
 
         return response

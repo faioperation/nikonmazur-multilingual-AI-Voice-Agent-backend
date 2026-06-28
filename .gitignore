@@ -7,6 +7,7 @@ Nikonmazur_Backend/__pycache__
 call_recordings/__pycache__
 accounts/__pycache__
 api/__pycache__
+stats/__pycache__
 
 media
 vapi_payloads1.json

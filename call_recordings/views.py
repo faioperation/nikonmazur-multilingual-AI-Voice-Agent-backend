@@ -5,14 +5,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.filters import SearchFilter
+from rest_framework.pagination import PageNumberPagination
 
+from api.permissions import IsViewerOrAbove
 from .models import CallRecording
 from .parsers import parse_end_of_call_report
 from .serializers import CallRecordingSerializer
 
 logger = logging.getLogger(__name__)
 
-# VAPI sends many event types; we only persist completed calls.
 SAVED_EVENT_TYPES = {"end-of-call-report"}
 
 
@@ -44,9 +45,20 @@ class VapiWebhookView(APIView):
         logger.info("Stored CallRecording %s from VAPI webhook", recording.pk)
 
         return Response(
-            {"success": True, "event_type": event_type, "stored": True, "id": recording.pk},
+            {
+                "success": True,
+                "event_type": event_type,
+                "stored": True,
+                "id": recording.pk,
+            },
             status=status.HTTP_201_CREATED,
         )
+
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 
 class CallRecordingListView(generics.ListAPIView):
@@ -54,7 +66,7 @@ class CallRecordingListView(generics.ListAPIView):
 
     queryset = CallRecording.objects.all().order_by("-created_at")
     serializer_class = CallRecordingSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsViewerOrAbove]
     filter_backends = [SearchFilter]
     search_fields = ["caller_name", "caller_number"]
 
@@ -64,4 +76,4 @@ class CallRecordingDetailView(generics.RetrieveAPIView):
 
     queryset = CallRecording.objects.all()
     serializer_class = CallRecordingSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsViewerOrAbove]

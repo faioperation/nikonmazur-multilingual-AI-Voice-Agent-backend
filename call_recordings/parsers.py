@@ -8,8 +8,6 @@ import re
 
 from django.utils.dateparse import parse_datetime
 
-# A real phone number must contain at least this many digits. This filters out
-# placeholder values such as "yes" that VAPI sometimes returns for web calls.
 _MIN_PHONE_DIGITS = 5
 
 

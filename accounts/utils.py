@@ -89,12 +89,12 @@ def send_otp_email(email, otp, name):
 
 def send_welcome_email(email, temporary_password, name, role):
     subject = "Welcome to Gloura Analytics"
-    
-    # We will use FRONTEND_URL or a default one for the login link
+
     from django.conf import settings
-    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+
+    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:5173")
     login_url = f"{frontend_url}/login"
-    
+
     context = {
         "AppName": "Gloura Analytics",
         "email": email,
@@ -116,11 +116,12 @@ def send_welcome_email(email, temporary_password, name, role):
 
 def send_admin_reset_email(email, temporary_password, name):
     subject = "Password Reset - Gloura Analytics"
-    
+
     from django.conf import settings
-    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+
+    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:5173")
     login_url = f"{frontend_url}/login"
-    
+
     context = {
         "AppName": "Gloura Analytics",
         "email": email,

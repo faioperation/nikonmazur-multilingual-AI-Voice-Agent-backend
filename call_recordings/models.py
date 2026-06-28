@@ -21,6 +21,13 @@ class CallRecording(models.Model):
 
     class Meta:
         ordering = ["-call_date", "-created_at"]
+        indexes = [
+            models.Index(fields=["-call_date"]),
+            models.Index(fields=["outcome"]),
+            models.Index(fields=["assistant_name"]),
+            models.Index(fields=["caller_name"]),
+            models.Index(fields=["-created_at"]),
+        ]
 
     def __str__(self):
         return f"{self.caller_name or 'Unknown'} - {self.call_date or self.created_at}"

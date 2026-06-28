@@ -13,7 +13,10 @@ from accounts.utils import (
 )
 from django.utils.crypto import get_random_string
 from django.db import transaction
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from rest_framework_simplejwt.token_blacklist.models import (
+    OutstandingToken,
+    BlacklistedToken,
+)
 
 
 class UserManagementSerializer(serializers.ModelSerializer):
@@ -41,19 +44,21 @@ class UserManagementSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         temp_password = get_random_string(length=12)
-        validated_data['must_change_password'] = True
-        
+        validated_data["must_change_password"] = True
+
         user = User.objects.create(**validated_data)
         user.set_password(temp_password)
         user.save()
-        
-        transaction.on_commit(lambda: send_welcome_email(
-            email=user.email,
-            temporary_password=temp_password,
-            name=user.name,
-            role=user.role
-        ))
-        
+
+        transaction.on_commit(
+            lambda: send_welcome_email(
+                email=user.email,
+                temporary_password=temp_password,
+                name=user.name,
+                role=user.role,
+            )
+        )
+
         return user
 
 
@@ -118,12 +123,11 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data["new_password"])
         user.must_change_password = False
         user.save()
-        
-        # Invalidate all outstanding tokens for this user
+
         tokens = OutstandingToken.objects.filter(user=user)
         for token in tokens:
             BlacklistedToken.objects.get_or_create(token=token)
-            
+
         return user
 
 
@@ -183,7 +187,6 @@ class ResetPasswordSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("User not found")
 
-        # Check if OTP verified
         if not PasswordResetOTP.objects.filter(user=user, verified=True).exists():
             raise serializers.ValidationError("OTP not verified")
 
@@ -196,7 +199,10 @@ class ResetPasswordSerializer(serializers.Serializer):
         user.set_password(new_password)
         user.save()
 
-        # Delete OTP after successful reset
+        tokens = OutstandingToken.objects.filter(user=user)
+        for token in tokens:
+            BlacklistedToken.objects.get_or_create(token=token)
+
         PasswordResetOTP.objects.filter(user=user).delete()
         return user
 

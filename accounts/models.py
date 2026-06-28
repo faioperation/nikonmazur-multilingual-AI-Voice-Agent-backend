@@ -8,6 +8,7 @@ from accounts.managers import CustomUserManager
 class UserRole(models.TextChoices):
     ADMIN = "ADMIN", "Admin"
     MANAGER = "MANAGER", "Manager"
+    VIEWER = "VIEWER", "Viewer"
 
 
 class User(AbstractUser):

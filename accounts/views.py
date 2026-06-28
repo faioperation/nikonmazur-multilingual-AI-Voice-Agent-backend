@@ -1,13 +1,13 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from accounts import serializers as sz
 from accounts.models import User
-from api.permissions import IsAdminRole
+from api.permissions import IsAdminRole, IsAdminRoleOrManagerReadOnly
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 import logging
@@ -16,9 +16,9 @@ from accounts.utils import send_admin_reset_email
 
 logger = logging.getLogger(__name__)
 
+
 class SelfProfileView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
 
     @swagger_auto_schema(
         operation_summary="Get logged-in user profile",
@@ -45,7 +45,7 @@ class SelfProfileView(APIView):
 
 
 class UserListCreateView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminRole]
+    permission_classes = [IsAuthenticated, IsAdminRoleOrManagerReadOnly]
 
     @swagger_auto_schema(
         operation_summary="List all users",
@@ -74,8 +74,18 @@ class UserListCreateView(APIView):
         )
 
 
-class UserDeleteView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminRole]
+class UserDetailView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminRoleOrManagerReadOnly]
+
+    @swagger_auto_schema(
+        operation_summary="Get user details",
+        responses={200: sz.UserManagementSerializer()},
+        tags=["Admin / Users"],
+    )
+    def get(self, request, user_id):
+        user = get_object_or_404(User, pk=user_id)
+        serializer = sz.UserManagementSerializer(user)
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         operation_summary="Delete a user",
@@ -92,7 +102,6 @@ class UserDeleteView(APIView):
     )
     def delete(self, request, user_id):
         user = get_object_or_404(User, pk=user_id)
-        # superuser check
         if user.is_superuser:
             return Response(
                 {"error": "Superuser cannot be deleted"},
@@ -147,6 +156,34 @@ class LoginView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="User Logout",
+        operation_description="Logout user by blacklisting their refresh token.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["refresh"],
+            properties={"refresh": openapi.Schema(type=openapi.TYPE_STRING)},
+        ),
+        responses={200: "Successfully logged out"},
+        tags=["Auth / Account"],
+    )
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(
+                {"message": "Successfully logged out"}, status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class ChangePasswordView(APIView):
@@ -272,25 +309,24 @@ class AdminResetUserPasswordView(APIView):
     )
     def post(self, request, user_id):
         user = get_object_or_404(User, pk=user_id)
-        
+
         temp_password = get_random_string(length=12)
         user.set_password(temp_password)
         user.must_change_password = True
         user.save()
-        
-        # Log the action
-        logger.info(
-            f"Admin '{request.user.email}' (ID: {request.user.id}) reset password "
-            f"for user '{user.email}' (ID: {user.id})"
-        )
-        
+
+        # logger.info(
+        #     f"Admin '{request.user.email}' (ID: {request.user.id}) reset password "
+        #     f"for user '{user.email}' (ID: {user.id})"
+        # )
+
         send_admin_reset_email(
-            email=user.email,
-            temporary_password=temp_password,
-            name=user.name
+            email=user.email, temporary_password=temp_password, name=user.name
         )
-        
+
         return Response(
-            {"message": f"Password reset for {user.email}. An email with the new temporary password has been sent."},
+            {
+                "message": f"Password reset for {user.email}. An email with the new temporary password has been sent."
+            },
             status=status.HTTP_200_OK,
         )
