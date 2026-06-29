@@ -2,24 +2,18 @@ import csv
 import io
 import requests
 from collections import defaultdict
-from django.core.cache import cache
+
 from django.conf import settings
 
 SHEET_ID = settings.GOOGLE_SHEET_ID
 GID = settings.GOOGLE_SHEET_GID
+
 CSV_URL = (
     f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={GID}"
 )
 
-CACHE_KEY = "cars_sheet"
-CACHE_TIMEOUT = 3600  # 1 hour
 
-
-def get_all_cars():
-
-    cached = cache.get(CACHE_KEY)
-    if cached:
-        return cached
+def load_inventory():
 
     response = requests.get(CSV_URL, timeout=10)
     response.raise_for_status()
@@ -38,16 +32,16 @@ def get_all_cars():
 
     color_idx = next(i for i, h in enumerate(headers) if "Farbe" in h and "Au" in h)
 
-    grouped = defaultdict(list)
+    inventory = defaultdict(list)
 
     for row in reader:
 
         try:
             stock = int(row[stock_idx])
-        except:
+        except Exception:
             stock = 0
 
-        grouped[row[model_idx]].append(
+        inventory[row[model_idx]].append(
             {
                 "color": row[color_idx],
                 "interior": row[interior_idx],
@@ -55,23 +49,43 @@ def get_all_cars():
             }
         )
 
-    lines = []
+    return inventory
 
-    for model, cars in grouped.items():
 
-        lines.append(f"{model}:")
+def check_availability(model_name: str):
 
-        for car in cars:
-            lines.append(
-                f"  - {car['color']} "
-                f"(interior: {car['interior']}) "
-                f"— Stock: {car['stock']}"
-            )
+    inventory = load_inventory()
 
-        lines.append("")
+    if not model_name:
+        return "No model name was provided."
 
-    result = "\n".join(lines)
+    query = model_name.lower().strip()
 
-    cache.set(CACHE_KEY, result, CACHE_TIMEOUT)
+    matched = {}
 
-    return result
+    for model, variants in inventory.items():
+
+        if query in model.lower() or model.lower() in query:
+            matched[model] = variants
+
+    if not matched:
+        return f"No availability information found for {model_name}."
+
+    result = []
+
+    for model, variants in matched.items():
+
+        available = [v for v in variants if v["stock"] > 0]
+
+        if not available:
+            result.append(f"{model} is currently out of stock.")
+            continue
+
+        colours = ", ".join(
+            f"{v['color']} (interior: {v['interior']}, stock: {v['stock']})"
+            for v in available
+        )
+
+        result.append(f"{model} is available. Available variants: {colours}.")
+
+    return "\n".join(result)
