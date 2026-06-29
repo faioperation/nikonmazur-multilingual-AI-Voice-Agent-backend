@@ -134,7 +134,7 @@ def get_overview():
             "minutes_today": round((today_row.get("seconds") or 0) / 60),
             "minutes_this_week": round(week_seconds / 60),
             "average_duration": _format_duration(month_avg),
-            "test_drive_count": all_outcomes.get("test_drive", 0),
+            "test_drive_count": all_outcomes.get("test drive", 0),
         },
         "call_activity": [
             {"day": label, "count": week_rows.get(index + 1, {}).get("count", 0)}
